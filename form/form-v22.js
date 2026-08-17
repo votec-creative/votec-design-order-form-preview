@@ -2902,6 +2902,7 @@ function jumpToStep(step) {
 }
 
 let blankDesignModalResolver = null;
+let blankDesignReturnTarget = null;
 
 function getBlankDesignInstructionCards() {
   const sourceCards = state.imgCards.length ? state.imgCards : (state.common ? [state.common] : []);
@@ -2914,8 +2915,22 @@ function getBlankDesignInstructionCards() {
   }).map(card => resolveInstructionCard(card) || card);
 }
 
+function getFirstBlankDesignInstructionTarget() {
+  const cardIndex = state.imgCards.findIndex(card => {
+    const effectiveCard = resolveInstructionCard(card) || card;
+    return effectiveCard.design !== 'おまかせ' && !hasDesignInstructionContent(effectiveCard.designTxt);
+  });
+  if (cardIndex >= 0) return { cardIndex, prefix: `card-${cardIndex}` };
+  if (state.common && state.common.design !== 'おまかせ' && !hasDesignInstructionContent(state.common.designTxt)) {
+    return { cardIndex: -1, prefix: 'common' };
+  }
+  return null;
+}
+
 function resolveBlankDesignModal(accept) {
   const modal = document.getElementById('blank-design-confirm-modal');
+  const returnTarget = blankDesignReturnTarget;
+  blankDesignReturnTarget = null;
   if (accept) {
     getBlankDesignInstructionCards().forEach(card => {
       card.design = 'おまかせ';
@@ -2931,16 +2946,25 @@ function resolveBlankDesignModal(accept) {
   resolver?.(accept);
   if (!accept) {
     currentStep = 4;
+    if (returnTarget?.cardIndex >= 0 && state.imgCards[returnTarget.cardIndex]) {
+      state.activeInstructionGroup = returnTarget.cardIndex;
+      renderInstructionGroups();
+    }
     goTo(4);
     requestAnimationFrame(() => {
-      document.querySelector('.design-instruction-textarea')?.focus({ preventScroll: true });
-      document.querySelector('.design-instruction-textarea')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const field = document.getElementById(`f-designtxt-${returnTarget?.prefix || 'common'}`);
+      const textarea = field?.querySelector('textarea[aria-label="デザイン指示"]') ||
+        document.querySelector('textarea[aria-label="デザイン指示"]');
+      if (!textarea) return;
+      textarea.focus({ preventScroll: true });
+      textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
 }
 
 function confirmBlankDesignInstructions() {
   if (!getBlankDesignInstructionCards().length) return Promise.resolve(true);
+  blankDesignReturnTarget = getFirstBlankDesignInstructionTarget();
   const modal = document.getElementById('blank-design-confirm-modal');
   if (!modal) return Promise.resolve(true);
   if (modal.parentElement !== document.body) document.body.appendChild(modal);
