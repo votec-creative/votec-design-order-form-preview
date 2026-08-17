@@ -598,7 +598,7 @@ function relocateIndustryAndAddProductionType() {
   field.className = 'field';
   field.id = 'f-production-type';
   field.innerHTML = `
-    <div class="lbl">制作内容 <span class="req">必須</span></div>
+    <div class="lbl">媒体を絞り込む <span class="req">必須</span></div>
     <div class="radios" id="production-type-btns">
       <div class="rbtn" onclick="setProductionType('集客',this)">集客</div>
       <div class="rbtn" onclick="setProductionType('求人',this)">求人</div>
