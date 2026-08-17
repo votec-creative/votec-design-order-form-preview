@@ -2373,6 +2373,15 @@ textarea {
   row-gap: 1px;
 }
 
+/* The media filter is a compact helper, not a full input section. */
+#f-production-type { margin-bottom: 16px; }
+#f-production-type > .lbl { margin-bottom: 4px; }
+#f-production-type .radios { gap: 4px; }
+#f-production-type .rbtn {
+  min-height: 36px;
+  padding: 6px 9px 6px 28px;
+}
+
 @media (max-width: 460px) {
   .deadline-today {
     grid-template-columns: 1fr;
