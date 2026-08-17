@@ -625,39 +625,59 @@ function relocateIndustryAndAddProductionType() {
 }
 
 const mediaByProductionType = {
-  '集客': ['駅ちか','風俗じゃぱん','メンズエステランキング','デリヘルじゃぱん','メンエスじゃぱん','デリヘルが呼べるホテル','デリヘルタウン','夜遊びショコラ','エステ魂','爆サイ.com','メンエスSNS02','駅ちか!パラダイス','口コミ風俗情報局','フーコレ','エステラブ','ホスパラ（集客）','風俗エステランキング','リアクションアップ','Erotic Guide','ホスラブ','G1','オリジナルHP','その他'],
-  '求人': ['バニラ','体入エミリー','体入ショコラ','ココア','はじめての風俗アルバイト','体入ホスパラ','メンエスリクルート','Qプリ','エステラブ','R-30','ショコラ','キャバイト','ジャニーズチケット掲示板','その他'],
-  'スタッフ募集': ['メンズバニラ','ジョブショコラ','野郎WORK','俺の風','FENIXJOB','その他']
+  '集客': ['駅ちか','風俗じゃぱん','デリヘルじゃぱん','メンエスじゃぱん','デリヘルタウン','口コミ風俗情報局','爆サイ.com','メンズエステランキング','エステ魂','メンエスSNS02','エステラブ','ホスパラ（集客）','ホスラブ','夜遊びショコラ','デリヘルが呼べるホテル','駅ちか!パラダイス','フーコレ','風俗エステランキング','リアクションアップ','Erotic Guide','その他'],
+  '求人': ['バニラ','ココア','体入エミリー','体入ショコラ','体入ホスパラ','ホスラブ','はじめての風俗アルバイト','Qプリ','R-30','ジャニーズチケット掲示板','メンエスリクルート','リラクジョブ','キャバイト','その他'],
+  'スタッフ募集': ['メンズバニラ','野郎WORK','俺の風','FENIXJOB','ジョブショコラ','その他']
 };
 
 function renderMediumChips(productionType) {
   // 業種との紐づけは一旦使わず、登録済みの媒体をすべて表示する。
-  // 重複媒体は1件にまとめ、業種は媒体候補の絞り込みには利用しない。
-  const seen = new Set();
-  const allProductionMedia = [...new Set(Object.values(mediaByProductionType).flat())];
-  const mediumPriority = ['バニラ','駅ちか','体入エミリー','風俗じゃぱん','メンズバニラ','体入ショコラ','メンズエステランキング','デリヘルじゃぱん','メンエスじゃぱん','ココア','はじめての風俗アルバイト','体入ホスパラ','デリヘルが呼べるホテル','デリヘルタウン','メンエスリクルート','夜遊びショコラ','エステ魂','爆サイ.com','Qプリ','メンエスSNS02','駅ちか!パラダイス','口コミ風俗情報局','ジョブショコラ','野郎WORK','俺の風','FENIXJOB','フーコレ','R-30','エステラブ','ジャニーズチケット掲示板'];
-  const priorityIndex = new Map(mediumPriority.map((name, index) => [name, index]));
+  // 制作内容ごとに見出しを分け、重複媒体は最初のグループにだけ表示する。
   const selectedTypes = Array.isArray(productionType) ? productionType : (productionType ? [productionType] : []);
-  const filteredMedia = selectedTypes.length
-    ? [...new Set(selectedTypes.flatMap(type => mediaByProductionType[type] || []))]
-    : allProductionMedia;
-  const mediumList = (filteredMedia || allProductionMedia)
-    .filter(name => priorityIndex.has(name) || name === 'その他')
-    .slice()
-    .sort((a, b) => (priorityIndex.get(a) ?? 999) - (priorityIndex.get(b) ?? 999));
+  const groupOrder = ['集客', '求人', 'スタッフ募集'];
+  const visibleTypes = selectedTypes.length
+    ? groupOrder.filter(type => selectedTypes.includes(type))
+    : groupOrder;
   const chipsWrap = document.getElementById('medium-chips');
-  if (!mediumList.length) {
+  if (!visibleTypes.length) {
     chipsWrap.innerHTML = '<div style="font-size:13px;color:var(--color-text-muted)">先に制作内容を選択してください</div>';
     return;
   }
-  chipsWrap.innerHTML = mediumList.map(mediumName => {
-    const isSelected = state.selectedMedia.includes(mediumName);
+  const categoryHtml = visibleTypes.map(type => {
+    const media = (mediaByProductionType[type] || [])
+      .filter(name => name !== 'その他');
+    if (!media.length) return '';
     return `
-      <label class="medium-select-row ${isSelected ? 'is-selected' : ''}" for="mchip-${cssId(mediumName)}">
-        <input type="checkbox" id="mchip-${cssId(mediumName)}" ${isSelected ? 'checked' : ''} onchange="toggleMedium('${escJs(mediumName)}')">
-        <strong>${escHtml(mediumName)}</strong>
-      </label>`;
+      <section class="medium-category" aria-labelledby="medium-category-${cssId(type)}">
+        <h3 class="medium-category-title" id="medium-category-${cssId(type)}">${escHtml(type)}</h3>
+        <div class="medium-category-list">
+          ${media.map(mediumName => {
+            const isSelected = state.selectedMedia.includes(mediumName);
+            return `
+              <label class="medium-select-row ${isSelected ? 'is-selected' : ''}" for="mchip-${cssId(type)}-${cssId(mediumName)}">
+                <input type="checkbox" id="mchip-${cssId(type)}-${cssId(mediumName)}" ${isSelected ? 'checked' : ''} onchange="toggleMedium('${escJs(mediumName)}')">
+                <strong>${escHtml(mediumName)}</strong>
+              </label>`;
+          }).join('')}
+        </div>
+      </section>`;
   }).join('');
+  const otherMedia = ['G1', 'オリジナルHP', 'その他'];
+  chipsWrap.innerHTML = categoryHtml + `
+    <section class="medium-category medium-category-other" aria-labelledby="medium-category-other">
+      <h3 class="medium-category-title" id="medium-category-other">その他</h3>
+      <div class="medium-category-list">
+        ${otherMedia.map(mediumName => {
+          const isSelected = state.selectedMedia.includes(mediumName);
+          const displayName = mediumName === 'その他' ? 'その他の媒体' : mediumName;
+          return `
+            <label class="medium-select-row ${isSelected ? 'is-selected' : ''}" for="mchip-other-${cssId(mediumName)}">
+              <input type="checkbox" id="mchip-other-${cssId(mediumName)}" ${isSelected ? 'checked' : ''} onchange="toggleMedium('${escJs(mediumName)}')">
+              <strong>${escHtml(displayName)}</strong>
+            </label>`;
+        }).join('')}
+      </div>
+    </section>`;
 }
 
 function cssId(s) { return s.replace(/[^a-zA-Z0-9]/g, c => c.charCodeAt(0)); }
@@ -2430,13 +2450,15 @@ function setDelivery(value) {
   const targetButtonId = DELIVERY_BUTTON_ID_BY_VALUE[value];
   if (targetButtonId) document.getElementById('rb-' + targetButtonId).classList.add('sel');
   document.getElementById('date-input').style.display = value === '納期指定' ? 'block' : 'none';
-  const deliveryPicker = document.getElementById('delivery-calendar-picker'); if (deliveryPicker) deliveryPicker.hidden = true;
+  const deliveryPicker = document.getElementById('delivery-calendar-picker');
+  if (deliveryPicker) deliveryPicker.hidden = true;
   document.getElementById('f-delivery').classList.remove('inv');
   if (value === '納期指定') {
     handleDeliveryDateChange(document.getElementById('inp-date'));
     renderDeliveryCalendar();
   }
 }
+
 setDelivery = function(value) {
   state.delivery = value;
   ['d1', 'd2', 'd3'].forEach(id => document.getElementById('rb-' + id)?.classList.remove('sel'));
@@ -2449,19 +2471,49 @@ setDelivery = function(value) {
   const picker = document.getElementById('delivery-calendar-picker');
   if (picker) picker.hidden = true;
   document.getElementById('f-delivery')?.classList.remove('inv');
-  if (value === '\u7d0d\u671f\u6307\u5b9a') { handleDeliveryDateChange(document.getElementById('inp-date')); renderDeliveryCalendar(); }
+  if (value === '\u7d0d\u671f\u6307\u5b9a') {
+    handleDeliveryDateChange(document.getElementById('inp-date'));
+    renderDeliveryCalendar();
+  }
 };
-function toggleDeliveryCalendar() { const picker = document.getElementById('delivery-calendar-picker'); if (!picker) return; picker.hidden = !picker.hidden; if (!picker.hidden) renderDeliveryCalendar(); }
+
+function toggleDeliveryCalendar() {
+  const picker = document.getElementById('delivery-calendar-picker');
+  if (!picker) return;
+  picker.hidden = !picker.hidden;
+  if (!picker.hidden) renderDeliveryCalendar();
+}
 
 let deliveryCalendarView = new Date();
-function formatDeliveryInputDate(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+
+function formatDeliveryInputDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function renderDeliveryCalendar() {
-  const picker = document.getElementById('delivery-calendar-picker'); if (!picker) return;
-  const year = deliveryCalendarView.getFullYear(), month = deliveryCalendarView.getMonth(), firstDay = new Date(year, month, 1).getDay(), daysInMonth = new Date(year, month + 1, 0).getDate(), selected = document.getElementById('inp-date')?.value || '', todayValue = formatDeliveryInputDate(new Date()), weekdays = ['日','月','火','水','木','金','土'];
-  let cells = ''; for (let i = 0; i < firstDay; i += 1) cells += '<span class="delivery-calendar-day is-empty" aria-hidden="true"></span>';
-  for (let day = 1; day <= daysInMonth; day += 1) { const value = formatDeliveryInputDate(new Date(year, month, day)), disabled = isNonWorkingDeliveryDate(value), classes = ['delivery-calendar-day', disabled ? 'is-non-working' : '', value === selected ? 'is-selected' : '', value === todayValue ? 'is-today' : ''].filter(Boolean).join(' '); cells += `<button type="button" class="${classes}" ${disabled ? 'disabled' : ''} onclick="selectDeliveryDate('${value}')">${day}</button>`; }
+  const picker = document.getElementById('delivery-calendar-picker');
+  if (!picker) return;
+  const year = deliveryCalendarView.getFullYear();
+  const month = deliveryCalendarView.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const selected = document.getElementById('inp-date')?.value || '';
+  const todayValue = formatDeliveryInputDate(new Date());
+  const weekdays = ['日','月','火','水','木','金','土'];
+  let cells = '';
+  for (let i = 0; i < firstDay; i += 1) cells += '<span class="delivery-calendar-day is-empty" aria-hidden="true"></span>';
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const value = formatDeliveryInputDate(new Date(year, month, day));
+    const disabled = isNonWorkingDeliveryDate(value);
+    const classes = ['delivery-calendar-day', disabled ? 'is-non-working' : '', value === selected ? 'is-selected' : '', value === todayValue ? 'is-today' : ''].filter(Boolean).join(' ');
+    cells += `<button type="button" class="${classes}" ${disabled ? 'disabled' : ''} onclick="selectDeliveryDate('${value}')" aria-label="${value}">${day}</button>`;
+  }
   picker.innerHTML = `<div class="delivery-calendar-head"><button type="button" class="delivery-calendar-nav" onclick="shiftDeliveryCalendar(-1)" aria-label="前の月">‹</button><strong>${year}年${month + 1}月</strong><button type="button" class="delivery-calendar-nav" onclick="shiftDeliveryCalendar(1)" aria-label="次の月">›</button></div><div class="delivery-calendar-weekdays">${weekdays.map(day => `<span>${day}</span>`).join('')}</div><div class="delivery-calendar-grid">${cells}</div><p class="delivery-calendar-help">稼働日外は選択できません。</p>`;
 }
+
 renderDeliveryCalendar = function() {
   const picker = document.getElementById('delivery-calendar-picker');
   if (!picker) return;
@@ -2482,8 +2534,22 @@ renderDeliveryCalendar = function() {
   }
   picker.innerHTML = `<div class="delivery-calendar-head"><button type="button" class="delivery-calendar-nav" onclick="shiftDeliveryCalendar(-1)" aria-label="\u524d\u306e\u6708">‹</button><strong>${year}\u5e74${month + 1}\u6708</strong><button type="button" class="delivery-calendar-nav" onclick="shiftDeliveryCalendar(1)" aria-label="\u6b21\u306e\u6708">›</button></div><div class="delivery-calendar-weekdays">${weekdays.map(day => `<span>${day}</span>`).join('')}</div><div class="delivery-calendar-grid">${cells}</div><div class="delivery-calendar-legend"><span><i class="is-available"></i>選択可能</span><span><i class="is-off"></i>稼働日外</span></div>`;
 };
-function shiftDeliveryCalendar(delta) { deliveryCalendarView = new Date(deliveryCalendarView.getFullYear(), deliveryCalendarView.getMonth() + delta, 1); renderDeliveryCalendar(); }
-function selectDeliveryDate(value) { if (isNonWorkingDeliveryDate(value)) return; const input = document.getElementById('inp-date'); if (!input) return; input.value = value; handleDeliveryDateChange(input); const picker = document.getElementById('delivery-calendar-picker'); if (picker) picker.hidden = true; renderDeliveryCalendar(); }
+
+function shiftDeliveryCalendar(delta) {
+  deliveryCalendarView = new Date(deliveryCalendarView.getFullYear(), deliveryCalendarView.getMonth() + delta, 1);
+  renderDeliveryCalendar();
+}
+
+function selectDeliveryDate(value) {
+  if (isNonWorkingDeliveryDate(value)) return;
+  const input = document.getElementById('inp-date');
+  if (!input) return;
+  input.value = value;
+  handleDeliveryDateChange(input);
+  const picker = document.getElementById('delivery-calendar-picker');
+  if (picker) picker.hidden = true;
+  renderDeliveryCalendar();
+}
 
 function handleDeliveryDateChange(input) {
   const value = input?.value || '';
@@ -3185,7 +3251,10 @@ function renderTodayDeadline(today) {
 }
 
 let deadlineCalendarExpanded = false;
-function toggleDeadlineCalendar() { deadlineCalendarExpanded = !deadlineCalendarExpanded; renderDeadlineCalendar(); }
+function toggleDeadlineCalendar() {
+  deadlineCalendarExpanded = !deadlineCalendarExpanded;
+  renderDeadlineCalendar();
+}
 function renderDeadlineCalendar() {
   const body = document.getElementById('deadline-calendar-body');
   if (!body) return;
@@ -3213,7 +3282,10 @@ function renderDeadlineCalendar() {
   }
   body.innerHTML = rows.slice(0, deadlineCalendarExpanded ? rows.length : 7).join('');
   const moreButton = document.getElementById('deadline-calendar-more');
-  if (moreButton) { moreButton.hidden = rows.length <= 7; moreButton.textContent = deadlineCalendarExpanded ? '表示を閉じる' : '今後の日程をさらに表示'; }
+  if (moreButton) {
+    moreButton.hidden = rows.length <= 7;
+    moreButton.textContent = deadlineCalendarExpanded ? '表示を閉じる' : '今後の日程をさらに表示';
+  }
 }
 
 function applyCalendarApiData(payload) {
@@ -3267,6 +3339,13 @@ renderDeadlineCalendar();
 loadCalendarFromApi();
 relocateIndustryAndAddProductionType();
 renderCommonBlock();
+if (!restoredDraft && !state.delivery) {
+  state.delivery = '\u5e0c\u671b\u306a\u3057';
+  ['d1', 'd2', 'd3'].forEach(id => document.getElementById('rb-' + id)?.classList.remove('sel'));
+  document.getElementById('rb-d1')?.classList.add('sel');
+  const dateInput = document.getElementById('date-input');
+  if (dateInput) dateInput.style.display = 'none';
+}
 // 新規入力時は「希望なし」を初期選択にし、保存済みの指定は復元時に優先する。
 if (!restoredDraft && !state.delivery) {
   state.delivery = '希望なし';
