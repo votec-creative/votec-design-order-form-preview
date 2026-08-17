@@ -559,7 +559,13 @@ function setIndustry(name, el) {
   }
 }
 
-function setProductionType(value, el) {
+function syncProductionTypeControls(selected = getProductionTypeSelections()) {
+  document.querySelectorAll('#production-type-btns input[type="checkbox"]').forEach(input => {
+    input.checked = selected.includes(input.value);
+  });
+}
+
+function setProductionType(value) {
   const selected = getProductionTypeSelections();
   const index = selected.indexOf(value);
   if (index >= 0) selected.splice(index, 1);
@@ -567,7 +573,7 @@ function setProductionType(value, el) {
   state.productionTypes = selected;
   state.productionType = selected.join('・');
   renderMediumChips(selected);
-  document.querySelectorAll('#production-type-btns .rbtn').forEach(btn => btn.classList.toggle('sel', selected.includes(btn.textContent.trim())));
+  syncProductionTypeControls(selected);
   document.getElementById('f-production-type')?.classList.remove('inv');
 }
 
@@ -599,10 +605,10 @@ function relocateIndustryAndAddProductionType() {
   field.id = 'f-production-type';
   field.innerHTML = `
     <div class="lbl">媒体を絞り込む <span class="req">必須</span></div>
-    <div class="radios" id="production-type-btns">
-      <div class="rbtn" onclick="setProductionType('集客',this)">集客</div>
-      <div class="rbtn" onclick="setProductionType('求人',this)">求人</div>
-      <div class="rbtn" onclick="setProductionType('スタッフ募集',this)">スタッフ募集</div>
+    <div class="production-filter-options" id="production-type-btns">
+      <label class="production-filter-option"><input type="checkbox" value="集客" onchange="setProductionType('集客')"><span>集客</span></label>
+      <label class="production-filter-option"><input type="checkbox" value="求人" onchange="setProductionType('求人')"><span>求人</span></label>
+      <label class="production-filter-option"><input type="checkbox" value="スタッフ募集" onchange="setProductionType('スタッフ募集')"><span>スタッフ募集</span></label>
     </div>
     <div class="err" style="display:none">制作内容を選択してください</div>`;
   if (medium.parentElement === p3) p3.insertBefore(field, medium);
@@ -616,9 +622,7 @@ function relocateIndustryAndAddProductionType() {
   const sub = p3.querySelector('.psub');
   if (title) title.textContent = '媒体・サイズ';
   if (sub) sub.textContent = '媒体を選び、必要な画像サイズを入力してください。';
-  document.querySelectorAll('#production-type-btns .rbtn').forEach(btn => {
-    btn.classList.toggle('sel', getProductionTypeSelections().includes(btn.textContent.trim()));
-  });
+  syncProductionTypeControls();
   // 制作内容が未選択でも、候補媒体を初期表示する。
   // 制作内容は絞り込み用の任意項目であり、媒体選択を妨げない。
   renderMediumChips(getProductionTypeSelections());
@@ -1490,7 +1494,7 @@ function renderCardTemplate(prefix, card, opts) {
         </div>
         <div class="instruction-text-part">
           <div class="lbl design-label-row">デザイン指示 <span class="opt">任意</span><button type="button" class="all-omakase-button ${card.allOmakase ? 'is-active' : ''}" onclick="setAllOmakase('${prefix}')">${card.allOmakase ? 'おまかせ（選択中）' : 'おまかせ'}</button></div>
-          <textarea aria-label="デザイン指示" class="control-w-lg design-instruction-textarea" placeholder="例）デザイン：参考画像①&#10;色合い：参考画像②&#10;フォント：丸みのある可愛らしいフォント&#10;人物：添付の女性2名を使用してください。" oninput="updateInstructionText('${prefix}','designTxt',this.value,this)">${escHtml(card.designTxt || '')}</textarea>
+          <textarea aria-label="デザイン指示" class="control-w-lg design-instruction-textarea${card.allOmakase ? ' is-omakase-disabled' : ''}" placeholder="例）デザイン：参考画像①&#10;色合い：参考画像②&#10;フォント：丸みのある可愛らしいフォント&#10;人物：添付の女性2名を使用してください。" oninput="updateInstructionText('${prefix}','designTxt',this.value,this)" ${card.allOmakase ? 'disabled aria-disabled="true"' : ''}>${escHtml(card.designTxt || '')}</textarea>
           ${card.allOmakase ? '<p class="omakase-disclaimer">※おまかせの場合、作成後の要望・修正は追加料金が発生しますので予めご了承ください。</p>' : ''}
         </div>
       </div>
@@ -3149,9 +3153,7 @@ function restoreDraftUI(draft) {
   document.querySelectorAll('#industry-btns .rbtn').forEach(button => {
     button.classList.toggle('sel', button.textContent.trim() === state.industry);
   });
-  document.querySelectorAll('#production-type-btns .rbtn').forEach(button => {
-    button.classList.toggle('sel', getProductionTypeSelections().includes(button.textContent.trim()));
-  });
+  syncProductionTypeControls();
   document.querySelectorAll('.fuzoku-warn').forEach(warning => {
     warning.style.display = state.industry === '風俗' ? 'flex' : 'none';
   });
