@@ -2939,6 +2939,7 @@ function resolveBlankDesignModal(accept) {
     getBlankDesignInstructionCards().forEach(card => {
       card.design = 'おまかせ';
       card.designTxt = 'おまかせ';
+      card.allOmakase = true;
     });
     saveDraft();
     rerenderDesignInstructions();
