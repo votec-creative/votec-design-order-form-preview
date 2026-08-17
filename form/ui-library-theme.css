@@ -2395,10 +2395,10 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
-  padding: 4px 10px;
+  min-height: 32px;
+  padding: 5px 11px;
   border: 1px solid #c9c9c4;
-  border-radius: 999px;
+  border-radius: 7px;
   background: #fff;
   color: #33332f;
   font-size: 11px;
