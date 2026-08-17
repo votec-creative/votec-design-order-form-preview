@@ -563,6 +563,20 @@ function syncProductionTypeControls(selected = getProductionTypeSelections()) {
   document.querySelectorAll('#production-type-btns input[type="checkbox"]').forEach(input => {
     input.checked = selected.includes(input.value);
   });
+  const allButton = document.querySelector('#production-type-btns .production-filter-all');
+  if (allButton) {
+    const isAll = selected.length === 0;
+    allButton.classList.toggle('is-selected', isAll);
+    allButton.setAttribute('aria-pressed', String(isAll));
+  }
+}
+
+function clearProductionTypeFilters() {
+  state.productionTypes = [];
+  state.productionType = '';
+  renderMediumChips([]);
+  syncProductionTypeControls([]);
+  document.getElementById('f-production-type')?.classList.remove('inv');
 }
 
 function setProductionType(value) {
@@ -606,6 +620,7 @@ function relocateIndustryAndAddProductionType() {
   field.innerHTML = `
     <div class="lbl">媒体を絞り込む <span class="req">必須</span></div>
     <div class="production-filter-options" id="production-type-btns">
+      <button type="button" class="production-filter-option production-filter-all" aria-pressed="true" onclick="clearProductionTypeFilters()">すべて</button>
       <label class="production-filter-option"><input type="checkbox" value="集客" onchange="setProductionType('集客')"><span>集客</span></label>
       <label class="production-filter-option"><input type="checkbox" value="求人" onchange="setProductionType('求人')"><span>求人</span></label>
       <label class="production-filter-option"><input type="checkbox" value="スタッフ募集" onchange="setProductionType('スタッフ募集')"><span>スタッフ募集</span></label>
