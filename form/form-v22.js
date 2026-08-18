@@ -1136,7 +1136,7 @@ function renderFloatingMediaSummary(visibleStep = currentStep) {
   const imageCount = entries.reduce((total, entry) => (
     total + entry.sizes.reduce((entryTotal, target) => entryTotal + target.quantity, 0)
   ), 0);
-  const shouldShow = visibleStep >= 3 && visibleStep <= totalSteps && entries.length > 0;
+  const shouldShow = (visibleStep === 3 || visibleStep === 4) && entries.length > 0;
   const isInstructionStep = visibleStep === 4 && state.imgCards.length > 0;
   const activeIndex = state.activeInstructionGroup || 0;
   const activeTargetId = state.imgCards[activeIndex]?.targetIds?.[0] || '';
