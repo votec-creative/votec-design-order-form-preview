@@ -644,8 +644,8 @@ function relocateIndustryAndAddProductionType() {
 }
 
 const mediaByProductionType = {
-  '集客': ['駅ちか','風俗じゃぱん','デリヘルじゃぱん','メンエスじゃぱん','デリヘルタウン','口コミ風俗情報局','爆サイ.com','メンズエステランキング','エステ魂','メンエスSNS02','エステラブ','ホスパラ（集客）','ホスラブ','夜遊びショコラ','デリヘルが呼べるホテル','駅ちか!パラダイス','フーコレ','風俗エステランキング','リアクションアップ','Erotic Guide','その他'],
-  '求人': ['バニラ','ココア','体入エミリー','体入ショコラ','体入ホスパラ','ホスラブ','はじめての風俗アルバイト','Qプリ','R-30','ジャニーズチケット掲示板','メンエスリクルート','リラクジョブ','キャバイト','その他'],
+  '集客': ['駅ちか','風俗じゃぱん','デリヘルじゃぱん','メンエスじゃぱん','デリヘルタウン','口コミ風俗情報局','爆サイ.com','メンズエステランキング','エステ魂','メンエスSNS02','エステラブ','ホスパラ（集客）','ホスラブ（集客）','夜遊びショコラ','デリヘルが呼べるホテル','駅ちか!パラダイス','フーコレ','風俗エステランキング','リアクションアップ','Erotic Guide','その他'],
+  '求人': ['バニラ','ココア','体入エミリー','体入ショコラ','体入ホスパラ','ホスラブ（求人）','はじめての風俗アルバイト','Qプリ','R-30','ジャニーズチケット掲示板','メンエスリクルート','リラクジョブ','キャバイト','その他'],
   'スタッフ募集': ['メンズバニラ','野郎WORK','俺の風','FENIXJOB','ジョブショコラ','その他']
 };
 
@@ -675,7 +675,7 @@ function renderMediumChips(productionType) {
             return `
               <label class="medium-select-row ${isSelected ? 'is-selected' : ''}" for="mchip-${cssId(type)}-${cssId(mediumName)}">
                 <input type="checkbox" id="mchip-${cssId(type)}-${cssId(mediumName)}" ${isSelected ? 'checked' : ''} onchange="toggleMedium('${escJs(mediumName)}')">
-                <strong>${escHtml(mediumName)}</strong>
+                <strong>${escHtml(getMediumDisplayName(mediumName))}</strong>
               </label>`;
           }).join('')}
         </div>
@@ -705,6 +705,13 @@ function escJs(s) { return (s || '').replace(/'/g, "\\'"); }
 function toggleMedium(mediumName) {
   const existingIndex = state.selectedMedia.indexOf(mediumName);
   if (existingIndex === -1) {
+    if (mediumName === 'ホスラブ（集客）' || mediumName === 'ホスラブ（求人）') {
+      const otherHosulove = mediumName === 'ホスラブ（集客）' ? 'ホスラブ（求人）' : 'ホスラブ（集客）';
+      state.selectedMedia = state.selectedMedia.filter(item => item !== otherHosulove && item !== 'ホスラブ');
+      state.openMedia = state.openMedia.filter(item => item !== otherHosulove && item !== 'ホスラブ');
+      delete state.mediaState[otherHosulove];
+      delete state.mediaState['ホスラブ'];
+    }
     state.selectedMedia.push(mediumName);
     if (!state.openMedia.includes(mediumName)) state.openMedia.push(mediumName);
     if (!state.mediaState[mediumName]) {
@@ -757,7 +764,7 @@ function renderMediumBlocks() {
     const mediaEntry = state.mediaState[mediumName];
     ensureMediaEntryQuantities(mediaEntry);
     const suggestions = getSizeSuggestions(mediumName);
-    const heading = mediumName === 'その他' ? 'その他媒体' : mediumName;
+    const heading = getMediumDisplayName(mediumName);
     const selectedEntries = getSelectedSizeEntriesForMedium(mediumName);
     const mediumTotal = selectedEntries.reduce((total, entry) => total + entry.quantity, 0);
     const settingSummary = selectedEntries.length
@@ -876,9 +883,12 @@ Object.assign(planSizeData, {
 });
 
 function getSizeSuggestions(mediumName) {
+  const dataMediumName = mediumName === 'ホスラブ（集客）' || mediumName === 'ホスラブ（求人）'
+    ? 'ホスラブ'
+    : mediumName;
   const sizeGroups = [];
   const flexibleSuggestions = mediumName === 'R-30' ? ['580×タテ自由'] : [];
-  (planSizeData[mediumName] || []).forEach(plan => {
+  (planSizeData[dataMediumName] || []).forEach(plan => {
     const sizes = (plan.sizes || []).filter(sizeLabel => /\d/.test(sizeLabel) && /[×xX]/.test(sizeLabel));
     sizes.forEach(sizeLabel => {
       const keepSeparate = mediumName === '駅ちか' && plan.plan === '駅DX';
@@ -1072,6 +1082,7 @@ function validateSelectedMediaSizes() {
 }
 
 function getMediumDisplayName(mediumName) {
+  if (mediumName === 'ホスラブ（集客）' || mediumName === 'ホスラブ（求人）') return 'ホスラブ';
   if (mediumName !== 'その他') return mediumName;
   const otherInput = document.getElementById('inp-medium-other');
   return (otherInput && otherInput.value.trim()) || 'その他媒体';
@@ -1126,7 +1137,6 @@ function renderFloatingMediaSummary(visibleStep = currentStep) {
   if (!panel) return;
   const menuToggle = document.getElementById('mobile-summary-menu-toggle');
   const menuCount = document.getElementById('mobile-summary-menu-count');
-  const siteHeader = document.querySelector('.site-header');
 
   const instructionTargets = getInstructionTargets();
   const entries = state.selectedMedia.map(mediumName => ({
@@ -1144,7 +1154,6 @@ function renderFloatingMediaSummary(visibleStep = currentStep) {
   panel.classList.toggle('is-visible', shouldShow);
   panel.classList.toggle('is-instruction-picker', isInstructionStep);
   menuToggle?.classList.toggle('is-visible', shouldShow);
-  siteHeader?.classList.toggle('has-mobile-media-menu', shouldShow);
   if (!shouldShow) {
     closeMobileMediaMenu();
     return;
@@ -3149,6 +3158,14 @@ function hydrateDraftState(savedState) {
   state.mediaState = savedState.mediaState && typeof savedState.mediaState === 'object'
     ? savedState.mediaState
     : {};
+  if (state.selectedMedia.includes('ホスラブ')) {
+    state.selectedMedia = state.selectedMedia.map(item => item === 'ホスラブ' ? 'ホスラブ（集客）' : item);
+    state.openMedia = state.openMedia.map(item => item === 'ホスラブ' ? 'ホスラブ（集客）' : item);
+    if (state.mediaState['ホスラブ'] && !state.mediaState['ホスラブ（集客）']) {
+      state.mediaState['ホスラブ（集客）'] = state.mediaState['ホスラブ'];
+    }
+    delete state.mediaState['ホスラブ'];
+  }
   state.bulkAssetFiles = [];
   state.common = normalizeCardDetails({
     ...makeBlankCard(),

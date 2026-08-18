@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="ui-library-theme.css?v=103">
+  <link rel="stylesheet" href="ui-library-theme.css?v=104">
 </head>
 <body>
   <header class="site-header">
@@ -29,10 +29,6 @@
         <span class="wordmark-secondary">ORDER</span>
       </div>
       <div class="header-actions">
-        <button class="mobile-summary-menu-toggle" id="mobile-summary-menu-toggle" type="button" aria-expanded="false" aria-label="選択内容を開く" onclick="toggleMobileMediaMenu()">
-          <span class="mobile-summary-list-icon" aria-hidden="true"><span></span><span></span><span></span></span>
-          <span class="mobile-summary-menu-count" id="mobile-summary-menu-count">0</span>
-        </button>
         <div class="header-right">
           <span class="header-step-key">STEP</span>
           <span id="header-step-value">1 / 6</span>
@@ -395,10 +391,9 @@
     <aside class="floating-media-summary" id="floating-media-summary" aria-label="選択中の媒体・サイズ・枚数">
       <div class="floating-media-summary-body" id="floating-media-summary-body" aria-live="polite"></div>
     </aside>
-    <button class="mobile-summary-menu-backdrop" id="mobile-summary-menu-backdrop" type="button" aria-label="選択内容を閉じる" onclick="closeMobileMediaMenu()" hidden></button>
   </main>
 
   <script src="data.js?v=28"></script>
-  <script src="form-v22.js?v=176"></script>
+  <script src="form-v22.js?v=178"></script>
 </body>
 </html>
