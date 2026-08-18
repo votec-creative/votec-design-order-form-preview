@@ -3560,7 +3560,9 @@ textarea {
 .instruction-group-current {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  column-gap: 12px;
+  row-gap: 4px;
   margin: calc(var(--form-group-pad) * -1) calc(var(--form-group-pad) * -1) 8px;
   padding: 15px var(--form-group-pad);
   border: 0;
@@ -3591,8 +3593,9 @@ textarea {
   font-weight: 500;
 }
 .instruction-group-current p {
-  flex: 1;
+  flex: 0 0 100%;
   margin: 0;
+  padding-left: 0;
   color: #666661;
   font-size: 11px;
 }
@@ -4056,7 +4059,7 @@ textarea {
   .floating-media-summary {
     top: auto;
     right: auto;
-    bottom: 92px;
+    bottom: 124px;
     left: 50%;
     width: min(720px, calc(100vw - 24px));
     transform: translateX(-50%);
@@ -4066,12 +4069,6 @@ textarea {
   }
   .floating-media-entry-list {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  }
-}
-
-@media (min-width: 601px) and (max-width: 760px) {
-  .floating-media-summary {
-    bottom: 112px;
   }
 }
 
