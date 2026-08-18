@@ -2159,6 +2159,10 @@ function renderInstructionGroups() {
   }
   const activeTargetId = activeCard.targetIds?.[0] || targets[0]?.id || '';
   const activeTarget = targets.find(target => target.id === activeTargetId) || targets[0];
+  const activeTargetSize = activeTarget ? splitSizeSuggestion(activeTarget.sizeLabel) : null;
+  const activeTargetMeta = activeTargetSize
+    ? [activeTargetSize.plan, activeTargetSize.title, activeTargetSize.note].filter(Boolean).join('・')
+    : '';
   const targetIndex = Math.max(targets.findIndex(target => target.id === activeTarget?.id), 0);
   const cardsForTarget = state.imgCards
     .map((card, index) => ({ card, index }))
@@ -2214,7 +2218,12 @@ function renderInstructionGroups() {
     <div class="instruction-group-current instruction-color-${targetIndex % 6}">
       <div>
         <span>編集中</span>
-        <strong>${activeTarget ? `${escHtml(activeTarget.displayName)}／${escHtml(activeTarget.sizeLabel)}` : '制作画像'}</strong>
+        ${activeTarget ? `
+          <strong class="instruction-current-medium">${escHtml(activeTarget.displayName)}</strong>
+          <span class="instruction-current-separator">／</span>
+          <strong class="instruction-current-dimension">${escHtml(activeTargetSize?.dimension || activeTarget.sizeLabel)}</strong>
+          ${activeTargetMeta ? `<small class="instruction-current-meta">${escHtml(activeTargetMeta)}</small>` : ''}
+        ` : '<strong>制作画像</strong>'}
       </div>
       <p>${activeTarget?.quantity > 1 ? `${activeCard.imageNumber || 1}枚目の指示` : 'この制作画像の指示'}</p>
     </div>
@@ -2512,6 +2521,11 @@ function formatDeliveryInputDate(date) {
   return `${year}-${month}-${day}`;
 }
 
+function isPastDeliveryDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
+  return value < formatDeliveryInputDate(new Date());
+}
+
 function renderDeliveryCalendar() {
   const picker = document.getElementById('delivery-calendar-picker');
   if (!picker) return;
@@ -2526,7 +2540,7 @@ function renderDeliveryCalendar() {
   for (let i = 0; i < firstDay; i += 1) cells += '<span class="delivery-calendar-day is-empty" aria-hidden="true"></span>';
   for (let day = 1; day <= daysInMonth; day += 1) {
     const value = formatDeliveryInputDate(new Date(year, month, day));
-    const disabled = isNonWorkingDeliveryDate(value);
+    const disabled = isPastDeliveryDate(value) || isNonWorkingDeliveryDate(value);
     const classes = ['delivery-calendar-day', disabled ? 'is-non-working' : '', value === selected ? 'is-selected' : '', value === todayValue ? 'is-today' : ''].filter(Boolean).join(' ');
     cells += `<button type="button" class="${classes}" ${disabled ? 'disabled' : ''} onclick="selectDeliveryDate('${value}')" aria-label="${value}">${day}</button>`;
   }
@@ -2547,9 +2561,10 @@ renderDeliveryCalendar = function() {
   for (let i = 0; i < firstDay; i += 1) cells += '<span class="delivery-calendar-day is-empty" aria-hidden="true"></span>';
   for (let day = 1; day <= daysInMonth; day += 1) {
     const value = formatDeliveryInputDate(new Date(year, month, day));
-    const disabled = isNonWorkingDeliveryDate(value);
+    const isPast = isPastDeliveryDate(value);
+    const disabled = isPast || isNonWorkingDeliveryDate(value);
     const classes = ['delivery-calendar-day', disabled ? 'is-non-working' : '', value === selected ? 'is-selected' : '', value === todayValue ? 'is-today' : ''].filter(Boolean).join(' ');
-    cells += `<button type="button" class="${classes}" ${disabled ? 'disabled' : ''} onclick="selectDeliveryDate('${value}')" aria-label="${value}" title="${disabled ? '\u7a3c\u50cd\u65e5\u5916' : '\u9078\u629e\u53ef\u80fd'}">${day}</button>`;
+    cells += `<button type="button" class="${classes}" ${disabled ? 'disabled' : ''} onclick="selectDeliveryDate('${value}')" aria-label="${value}" title="${isPast ? '過去の日付は指定できません' : disabled ? '\u7a3c\u50cd\u65e5\u5916' : '\u9078\u629e\u53ef\u80fd'}">${day}</button>`;
   }
   picker.innerHTML = `<div class="delivery-calendar-head"><button type="button" class="delivery-calendar-nav" onclick="shiftDeliveryCalendar(-1)" aria-label="\u524d\u306e\u6708">‹</button><strong>${year}\u5e74${month + 1}\u6708</strong><button type="button" class="delivery-calendar-nav" onclick="shiftDeliveryCalendar(1)" aria-label="\u6b21\u306e\u6708">›</button></div><div class="delivery-calendar-weekdays">${weekdays.map(day => `<span>${day}</span>`).join('')}</div><div class="delivery-calendar-grid">${cells}</div><div class="delivery-calendar-legend"><span><i class="is-available"></i>選択可能</span><span><i class="is-off"></i>稼働日外</span></div>`;
 };
@@ -2560,7 +2575,7 @@ function shiftDeliveryCalendar(delta) {
 }
 
 function selectDeliveryDate(value) {
-  if (isNonWorkingDeliveryDate(value)) return;
+  if (isPastDeliveryDate(value) || isNonWorkingDeliveryDate(value)) return;
   const input = document.getElementById('inp-date');
   if (!input) return;
   input.value = value;
@@ -2579,6 +2594,11 @@ function handleDeliveryDateChange(input) {
   if (!value) {
     field.classList.remove('inv');
     error.textContent = '納期希望を選択してください';
+    return;
+  }
+  if (isPastDeliveryDate(value)) {
+    field.classList.add('inv');
+    error.textContent = '今日より前の日付は指定できません';
     return;
   }
   if (isNonWorkingDeliveryDate(value)) {
@@ -2612,17 +2632,18 @@ function escHtml(s) { return (s || '').replace(/</g, '&lt;'); }
 /* ========== PREVIEW ========== */
 function cardSummary(card, isIndividual) {
   normalizeCardDetails(card);
-  const atmosphereTxt = card.moods.filter(mood => ATMOSPHERE_OPTIONS.includes(mood)).join('・') || '—';
-  const worldviewTxt = card.moods.filter(mood => WORLDVIEW_OPTIONS.includes(mood)).join('・') || '—';
-  const colorTxt = COLOR_ROLE_CONFIG.map(role => {
+  const atmosphereTxt = card.moods.filter(mood => ATMOSPHERE_OPTIONS.includes(mood)).join('・');
+  const worldviewTxt = card.moods.filter(mood => WORLDVIEW_OPTIONS.includes(mood)).join('・');
+  const colorParts = COLOR_ROLE_CONFIG.map(role => {
     const value = getColorRoleValue(card, role.key);
     const codeKey = role.key === 'sub' ? 'baseColorCode' : role.key === 'accent' ? 'accentColorCode' : 'mainColorCode';
     const roleCode = normalizeColorCode(card[codeKey]);
-    if (!value && !roleCode) return `${role.label}：—`;
+    if (!value && !roleCode) return '';
     if (value === 'その他') return `${role.label}：その他（${getColorRoleOther(card, role.key) || '未入力'}）`;
     const presetName = COLOR_PRESET_CODES[value] ? value : '';
     return `${role.label}：${presetName ? `${presetName} ` : ''}${roleCode || value}`;
-  }).join(' / ');
+  }).filter(Boolean);
+  const colorTxt = colorParts.join(' / ');
   const personUsage = card.personUsage || (card.person === '使用しない' ? '使用しない' : (card.person ? '使用する' : ''));
   let assetExtra = '';
   const personFiles = (card.personFiles || []).map(file => file.name).join(', ');
@@ -2638,6 +2659,14 @@ function cardSummary(card, isIndividual) {
   if (personUsage === '使用する') {
     personExtra = `<div class="prow"><span class="pk">在籍写真の使用</span><span class="pv">${card.staffPhotoAllowed ? '可' : '不可'}</span></div>`;
   }
+  const detailRows = [
+    colorTxt ? `<div class="prow"><span class="pk">カラー</span><span class="pv">${colorTxt}</span></div>` : '',
+    card.colorNote ? `<div class="prow"><span class="pk">カラー補足</span><span class="pv">${card.colorNote}</span></div>` : '',
+    atmosphereTxt ? `<div class="prow"><span class="pk">雰囲気</span><span class="pv">${atmosphereTxt}</span></div>` : '',
+    card.atmosphereOther ? `<div class="prow"><span class="pk">雰囲気・その他</span><span class="pv">${card.atmosphereOther}</span></div>` : '',
+    worldviewTxt ? `<div class="prow"><span class="pk">デザイン要素・モチーフ</span><span class="pv">${worldviewTxt}</span></div>` : '',
+    card.worldviewOther ? `<div class="prow"><span class="pk">デザイン要素・その他</span><span class="pv">${card.worldviewOther}</span></div>` : ''
+  ].filter(Boolean).join('');
   return `
     ${isIndividual ? `<div class="prow"><span class="pk">対象画像</span><span class="pv">${card.targetImage || '—'}</span></div>` : ''}
     <div class="prow"><span class="pk">人物写真</span><span class="pv">${personUsage || '—'}</span></div>
@@ -2645,12 +2674,7 @@ function cardSummary(card, isIndividual) {
     ${assetExtra}
     <div class="prow"><span class="pk">掲載文言</span><span class="pv">${card.copyTxt || '—'}</span></div>
     <div class="prow"><span class="pk">デザイン指示</span><span class="pv">${card.design === 'おまかせ' ? 'おまかせ' : (card.designTxt || '—')}</span></div>
-    <div class="prow"><span class="pk">カラー</span><span class="pv">${colorTxt}</span></div>
-    <div class="prow"><span class="pk">カラー補足</span><span class="pv">${card.colorNote || '—'}</span></div>
-    <div class="prow"><span class="pk">雰囲気</span><span class="pv">${atmosphereTxt}</span></div>
-    <div class="prow"><span class="pk">雰囲気・その他</span><span class="pv">${card.atmosphereOther || '—'}</span></div>
-    <div class="prow"><span class="pk">デザイン要素・モチーフ</span><span class="pv">${worldviewTxt}</span></div>
-    <div class="prow"><span class="pk">デザイン要素・その他</span><span class="pv">${card.worldviewOther || '—'}</span></div>`;
+    ${detailRows}`;
 }
 
 function buildPreview() {
@@ -2823,6 +2847,10 @@ function validate(step) {
       if (error) error.textContent = '納期希望を選択してください';
       if (!deliveryDate) {
         document.getElementById('f-delivery').classList.add('inv');
+        ok = false;
+      } else if (isPastDeliveryDate(deliveryDate)) {
+        document.getElementById('f-delivery').classList.add('inv');
+        if (error) error.textContent = '今日より前の日付は指定できません';
         ok = false;
       } else if (isNonWorkingDeliveryDate(deliveryDate)) {
         document.getElementById('f-delivery').classList.add('inv');

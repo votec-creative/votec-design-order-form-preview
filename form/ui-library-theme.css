@@ -613,13 +613,27 @@ input:focus, select:focus, textarea:focus {
   .header-inner { padding: 0 14px; }
   .header-logo { min-width: 0; height: auto; padding: 0; gap: 7px; font-size: 10px; letter-spacing: .13em; }
   .header-logo::before { width: 6px; height: 6px; box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb),.10); }
+  .header-actions {
+    max-width: 46vw;
+    flex: 0 1 auto;
+    overflow: hidden;
+  }
   .header-right {
-    max-width: none;
-    flex: 0 0 auto;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    flex: 0 1 auto;
     gap: 5px;
     padding: 7px 10px;
     font-size: 9px;
     letter-spacing: .05em;
+    overflow: hidden;
+  }
+  #header-step-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .header-step-key {
     min-height: 20px;
@@ -1684,18 +1698,21 @@ textarea {
 .deadline-calendar-details-hint { margin: 10px 2px; }
 .delivery-calendar-picker {
   width: min(100%, 320px);
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   margin-top: 10px;
   padding: 10px;
   border: 1px solid var(--color-border, #d8d8d2);
   border-radius: 10px;
   background: #fff;
 }
-.delivery-calendar-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.delivery-calendar-head { display: flex; align-items: center; justify-content: space-between; width: 100%; min-width: 0; margin-bottom: 8px; }
 .delivery-calendar-head strong { font-size: 13px; }
 .delivery-calendar-nav { width: 30px; height: 30px; border: 0; border-radius: 7px; background: #f3f4ff; color: #4657d8; font-size: 22px; line-height: 1; cursor: pointer; }
-.delivery-calendar-weekdays, .delivery-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.delivery-calendar-weekdays, .delivery-calendar-grid { display: grid; width: 100%; min-width: 0; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
 .delivery-calendar-weekdays { margin-bottom: 4px; color: #777771; font-size: 10px; font-weight: 700; text-align: center; }
-.delivery-calendar-day { display: grid; place-items: center; min-height: 30px; border: 1px solid transparent; border-radius: 6px; background: #fff; color: #282824; font-size: 12px; cursor: pointer; }
+.delivery-calendar-day { display: grid; place-items: center; width: 100%; min-width: 0; min-height: 30px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: #fff; color: #282824; font-size: 12px; cursor: pointer; }
 .delivery-calendar-day:hover:not(:disabled) { border-color: #4657d8; background: #f0f2ff; }
 .delivery-calendar-day.is-today { box-shadow: inset 0 0 0 1px #4657d8; }
 .delivery-calendar-day.is-selected { background: #4657d8; color: #fff; }
@@ -1719,7 +1736,12 @@ textarea {
 .delivery-calendar-legend span { display: inline-flex; align-items: center; gap: 4px; }
 .delivery-calendar-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #fff; border: 1px solid #4657d8; }
 .delivery-calendar-legend i.is-off { background: #f0f0ed; border-color: #d8d8d2; }
-@media (max-width: 600px) { .delivery-calendar-picker { width: 100%; } .delivery-calendar-day { min-height: 36px; } }
+@media (max-width: 600px) {
+  .delivery-calendar-picker { width: 100%; max-width: 100%; padding: 10px 8px; overflow: hidden; }
+  .delivery-calendar-weekdays,
+  .delivery-calendar-grid { gap: 2px; }
+  .delivery-calendar-day { min-height: 36px; }
+}
 .deadline-calendar-table {
   min-width: 760px;
 }
@@ -3549,6 +3571,7 @@ textarea {
 .instruction-group-current > div {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 7px;
 }
 .instruction-group-current span {
@@ -3557,6 +3580,15 @@ textarea {
 }
 .instruction-group-current strong {
   font-size: 14px;
+}
+.instruction-group-current .instruction-current-separator {
+  color: #555550;
+  font-size: 14px;
+}
+.instruction-group-current .instruction-current-meta {
+  color: #777771;
+  font-size: 10px;
+  font-weight: 500;
 }
 .instruction-group-current p {
   flex: 1;
@@ -4034,6 +4066,12 @@ textarea {
   }
   .floating-media-entry-list {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+@media (min-width: 601px) and (max-width: 760px) {
+  .floating-media-summary {
+    bottom: 112px;
   }
 }
 
