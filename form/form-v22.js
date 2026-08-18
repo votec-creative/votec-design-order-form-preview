@@ -1194,7 +1194,7 @@ function setMobileMediaMenuOpen(shouldOpen) {
   const backdrop = document.getElementById('mobile-summary-menu-backdrop');
   if (!panel || !menuToggle || !backdrop) return;
 
-  const canOpen = panel.classList.contains('is-visible') && window.matchMedia('(max-width: 600px)').matches;
+  const canOpen = panel.classList.contains('is-visible') && window.matchMedia('(max-width: 900px)').matches;
   const isOpen = !!shouldOpen && canOpen;
   panel.classList.toggle('is-mobile-open', isOpen);
   menuToggle.classList.toggle('is-open', isOpen);
@@ -3442,7 +3442,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeMobileMediaMenu();
 });
 window.addEventListener('resize', () => {
-  if (window.innerWidth > 600) closeMobileMediaMenu();
+  if (window.innerWidth > 900) closeMobileMediaMenu();
 });
 
 function placeAdvancedInstructionsAfterDesign(root) {
