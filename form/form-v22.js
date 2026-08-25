@@ -7,11 +7,11 @@ let currentStep = 1;
 let maxVisitedStep = 1;
 let instructionNotice = '';
 const totalSteps = 6;
-// テスト中のみ true。false に戻すと通常の必須入力チェックが有効になります。
-const TEST_MODE_ALLOW_INCOMPLETE_NAVIGATION = true;
+// 本番運用では false。必須項目が未入力の場合は次のステップへ進ませない。
+const TEST_MODE_ALLOW_INCOMPLETE_NAVIGATION = false;
 const DRAFT_STORAGE_KEY = 'votec-design-order-form-draft-v1';
 // Google Apps Scriptをデプロイ後、このURLを設定すると起動時に最新カレンダーを取得します。
-const CALENDAR_API_URL = '';
+const CALENDAR_API_URL = 'https://script.google.com/macros/s/AKfycbyztcHPH7Lm6Wlsle6DMVpOxct2PwtF4EDQoQJDPb327FYa_SvKJK40A_M_UUbbLQ2v1A/exec';
 const DELIVERY_SCHEDULE_BY_DATE = new Map();
 const LEGACY_DESIGN_INSTRUCTION_TEMPLATE = '■掲載文言\n\n■デザイン指示\n';
 const DESIGN_INSTRUCTION_TEMPLATE = '';
@@ -2788,9 +2788,6 @@ function validate(step) {
   };
 
   if (step === 1) {
-    // 依頼者情報は必須表示を残しつつ、未入力でも次へ進める。
-    ['f-office', 'f-staff', 'f-agent', 'f-email'].forEach(id => document.getElementById(id)?.classList.remove('inv'));
-    return ok;
     req('f-office', () => document.getElementById('sel-office').value);
     const officeValue = document.getElementById('sel-office').value;
     if (officeValue === 'VOTEC' || officeValue === 'その他')
