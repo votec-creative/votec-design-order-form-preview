@@ -1146,8 +1146,8 @@ function renderFloatingMediaSummary(visibleStep = currentStep) {
   const imageCount = entries.reduce((total, entry) => (
     total + entry.sizes.reduce((entryTotal, target) => entryTotal + target.quantity, 0)
   ), 0);
-  const shouldShow = (visibleStep === 3 || visibleStep === 4) && entries.length > 0;
-  const isInstructionStep = visibleStep === 4 && state.imgCards.length > 0;
+  const shouldShow = visibleStep === 3 && entries.length > 0;
+  const isInstructionStep = false;
   const activeIndex = state.activeInstructionGroup || 0;
   const activeTargetId = state.imgCards[activeIndex]?.targetIds?.[0] || '';
 
@@ -1427,9 +1427,10 @@ function renderCardTemplate(prefix, card, opts) {
   const currentTargetLabel = currentTarget
     ? `${currentTarget.displayName}／${currentTarget.sizeLabel}`
     : '同じ媒体・サイズ';
-  const sameTargetRemaining = prefix.startsWith('card-')
-    ? state.imgCards.filter(item => item !== card && item.targetIds?.[0] === currentTargetId).length
-    : 0;
+  const sameTargetCards = prefix.startsWith('card-')
+    ? state.imgCards.filter(item => item !== card && item.targetIds?.[0] === currentTargetId)
+    : [];
+  const sameTargetRemaining = sameTargetCards.length;
   const unenteredRemaining = prefix.startsWith('card-')
     ? state.imgCards.filter(item => item !== card && !cardHasAnyInput(item)).length
     : 0;
@@ -1450,7 +1451,7 @@ function renderCardTemplate(prefix, card, opts) {
       <input type="text" class="control-w-md" placeholder="例：メイン画像・700×300 / 全画像共通" value="${escAttr(card.targetImage)}" oninput="updateCardField('${prefix}','targetImage',this.value)">
       <div class="hint">どの画像・サイズへの指示かを明記してください（例：メイン、バナー700×300）</div>
     </div>` : ''}
-    <div class="field" id="f-person-${prefix}">
+    <div class="field" id="f-person-${prefix}" tabindex="-1">
       <div class="person-photo-question-row">
         <div class="lbl">人物写真を使用しますか <span class="req">必須</span></div>
         <div class="radios person-photo-modes">
@@ -1571,24 +1572,34 @@ function renderCardTemplate(prefix, card, opts) {
             この画像の指示をリセット
           </button>
         </div>
-        <details class="instruction-copy-menu">
-          <summary class="instruction-apply-all ${canCopyInstruction ? '' : 'is-disabled'}" ${canCopyInstruction ? '' : 'onclick="event.preventDefault()"'} title="${canCopyInstruction ? 'コピー先を選択' : 'この画像の必須項目を入力すると使用できます'}">
-            <span class="copy-action-icon" aria-hidden="true"></span>
-            コピー先を選ぶ
-            <span class="instruction-copy-chevron" aria-hidden="true">⌄</span>
-          </summary>
-          <div class="instruction-copy-options">
-            ${sameTargetRemaining > 0 ? `
-              <button type="button" onclick="applyInstructionToCurrentTarget()">
-                <strong>同じサイズの残り${sameTargetRemaining}枚にコピー</strong>
-                <small>${escHtml(currentTargetLabel)}のみ</small>
-              </button>` : ''}
-            <button type="button" onclick="applyInstructionToUnenteredImages()" ${unenteredRemaining ? '' : 'disabled'}>
-              <strong>すべての未入力画像にコピー${unenteredRemaining ? `（${unenteredRemaining}枚）` : ''}</strong>
-              <small>${unenteredRemaining ? '媒体・サイズを問わずコピーします。入力済みの画像は変更しません' : '未入力の制作画像はありません'}</small>
-            </button>
+        <div class="instruction-copy-action">
+          <div class="instruction-copy-action-text">
+            <strong>この画像の指示を、他の制作画像にも適用する</strong>
+            <small>入力したデザイン指示・掲載文言などを、他の画像へコピーします。</small>
           </div>
-        </details>
+          <details class="instruction-copy-menu">
+            <summary class="instruction-apply-all ${canCopyInstruction ? '' : 'is-disabled'}" ${canCopyInstruction ? '' : 'onclick="event.preventDefault()"'} title="${canCopyInstruction ? '適用する画像を選択' : 'この画像の必須項目を入力すると使用できます'}">
+              <span class="copy-action-icon" aria-hidden="true"></span>
+              他の画像にも適用
+              <span class="instruction-copy-chevron" aria-hidden="true">⌄</span>
+            </summary>
+            <div class="instruction-copy-options">
+              <button type="button" onclick="openInstructionTargetPicker()">
+                <strong>画像を個別に選択</strong>
+                <small>同じ指示にする画像だけを選べます</small>
+              </button>
+              ${sameTargetRemaining > 0 ? `
+                <button type="button" onclick="applyInstructionToCurrentTarget()">
+                  <strong>同じサイズの残り${sameTargetRemaining}枚に適用</strong>
+                  <small>${escHtml(currentTargetLabel)}のみ${sameTargetCards.some(cardHasAnyInput) ? '（入力済み画像を含みます）' : ''}</small>
+                </button>` : ''}
+              <button type="button" onclick="applyInstructionToUnenteredImages()" ${unenteredRemaining ? '' : 'disabled'}>
+                <strong>すべての未入力画像に適用${unenteredRemaining ? `（${unenteredRemaining}枚）` : ''}</strong>
+                <small>${unenteredRemaining ? '媒体・サイズを問わず適用します。入力済みの画像は変更しません' : '未入力の制作画像はありません'}</small>
+              </button>
+            </div>
+          </details>
+        </div>
       </div>` : ''}
     ${heading ? `</div>` : ''}
   `;
@@ -2173,17 +2184,12 @@ function renderInstructionGroups() {
     ? [activeTargetSize.plan, activeTargetSize.title, activeTargetSize.note].filter(Boolean).join('・')
     : '';
   const targetIndex = Math.max(targets.findIndex(target => target.id === activeTarget?.id), 0);
+  const completedImageCount = state.imgCards.filter(hasRequiredInstruction).length;
+  const totalImageCount = state.imgCards.length;
   const cardsForTarget = state.imgCards
     .map((card, index) => ({ card, index }))
     .filter(item => item.card.targetIds?.[0] === activeTarget?.id)
     .sort((a, b) => (Number(a.card.imageNumber) || 1) - (Number(b.card.imageNumber) || 1));
-  const reusableCards = state.imgCards
-    .map((card, index) => ({ card, index }))
-    .filter(item => {
-      if (item.index === activeIndex) return false;
-      const resolvedCard = resolveInstructionCard(item.card);
-      return resolvedCard && resolvedCard !== activeCard;
-    });
   const reuseSource = activeCard.sameAsCardKey
     ? findInstructionCardByKey(activeCard.sameAsCardKey)
     : null;
@@ -2191,9 +2197,15 @@ function renderInstructionGroups() {
 
   tabs.classList.add('instruction-image-navigation');
   targetTabs.innerHTML = `
+    <div class="instruction-progress-summary">
+      <span>編集する画像を選択</span>
+      <strong>入力状況 ${completedImageCount}/${totalImageCount}件</strong>
+    </div>
     <div class="instruction-image-targets">
       ${targets.map((target, index) => {
         const targetLabel = splitSizeSuggestion(target.sizeLabel);
+        const targetCards = state.imgCards.filter(card => card.targetIds?.[0] === target.id);
+        const targetCompletedCount = targetCards.filter(hasRequiredInstruction).length;
         return `
           <button type="button" class="instruction-image-target instruction-color-${index % 6} ${target.id === activeTarget?.id ? 'is-active' : ''} ${isInstructionTargetComplete(target) ? 'is-complete' : ''}" data-target-id="${target.id}" onclick="selectInstructionTarget('${target.id}')">
             <span>${escHtml(target.displayName)}</span>
@@ -2203,6 +2215,7 @@ function renderInstructionGroups() {
             </span>
             <b class="instruction-image-dimension">${escHtml(targetLabel.dimension)}</b>
             <small>${target.quantity}枚</small>
+            <em class="instruction-target-progress ${targetCompletedCount >= target.quantity ? 'is-complete' : ''}">${targetCompletedCount ? `${targetCompletedCount}/${target.quantity}入力済み` : '未入力'}</em>
             <i class="instruction-complete-icon ${isInstructionTargetComplete(target) ? 'is-visible' : ''}" aria-label="入力済み">✓</i>
           </button>`;
       }).join('')}
@@ -2218,7 +2231,7 @@ function renderInstructionGroups() {
               </button>
             </div>`).join('')}
         </div>
-        <span class="instruction-copy-status is-complete">${cardsForTarget.length}/${activeTarget.quantity}枚分</span>
+        <span class="instruction-copy-status ${cardsForTarget.filter(({ card }) => hasRequiredInstruction(card)).length >= activeTarget.quantity ? 'is-complete' : ''}">${cardsForTarget.filter(({ card }) => hasRequiredInstruction(card)).length}/${activeTarget.quantity}入力済み</span>
       </div>` : '';
 
   const wrap = document.querySelector('#common-instructions-wrap .design-instruction-block');
@@ -2237,32 +2250,12 @@ function renderInstructionGroups() {
       <p>${activeTarget?.quantity > 1 ? `${activeCard.imageNumber || 1}枚目の指示` : 'この制作画像の指示'}</p>
     </div>
     ${instructionNotice ? `<div class="instruction-inline-notice" role="status">${escHtml(instructionNotice)}</div>` : ''}
-    ${reusableCards.length ? `
-      <div class="instruction-reuse-entry ${activeCard.sameAsCardKey ? 'is-active' : ''}">
-        <label class="instruction-reuse-check">
-          <input type="checkbox" ${activeCard.sameAsCardKey ? 'checked' : ''} onchange="setInstructionReuse(this.checked)">
-          <span>他の制作画像と同じ指示にする</span>
-        </label>
-        <small>${activeCard.sameAsCardKey ? '参照する画像を選んでください' : '同じ内容なら入力を省略できます'}</small>
-      </div>` : ''}
-    ${activeCard.sameAsCardKey ? `
-      <div class="instruction-reuse-control is-active ${reuseSourceHasInstruction ? '' : 'is-invalid'}">
-          <div class="instruction-reuse-source">
-            <label for="instruction-reuse-select">同じ指示を使う画像</label>
-            <select id="instruction-reuse-select" onchange="setInstructionReuseSource(this.value)">
-              ${reusableCards.map(({ card }) => `
-                <option value="${escAttr(getInstructionCardKey(card))}" ${getInstructionCardKey(card) === activeCard.sameAsCardKey ? 'selected' : ''}>${escHtml(getInstructionCardLabel(card, targets))}${hasRequiredInstruction(card) ? '' : '（指示未入力）'}</option>
-              `).join('')}
-            </select>
-            ${reuseSourceHasInstruction ? '' : '<div class="instruction-reuse-error" role="alert">選択した画像の指示が未入力または未完了です。先に参照元の指示を入力してください。</div>'}
-            <p class="instruction-reuse-release-note">「他の制作画像と同じ指示にする」を解除すると、参照元の内容は引き継がれず、この画像の個別入力へ切り替わります。</p>
-          </div>
-      </div>` : ''}
     ${activeCard.sameAsCardKey ? `
       <div class="instruction-reuse-summary ${reuseSourceHasInstruction ? '' : 'is-invalid'}">
-        <span>${reuseSourceHasInstruction ? '同じ指示を設定済み' : '参照元の入力待ち'}</span>
+        <span>${reuseSourceHasInstruction ? '他の画像の指示を適用中' : '参照元の指示を確認してください'}</span>
         <strong>${escHtml(getInstructionCardLabel(reuseSource, targets))}</strong>
-        <p>${reuseSourceHasInstruction ? '選択した制作画像の指示内容が、そのまま適用されます。' : '参照元の指示を入力すると、この制作画像にも同じ内容が適用されます。'}</p>
+        <p>${reuseSourceHasInstruction ? '上記の画像に入力した内容が、この画像にも自動で反映されます。' : '参照元の画像が未入力または削除されています。個別入力へ切り替えてください。'}</p>
+        <button type="button" class="instruction-reuse-summary-action" onclick="setInstructionReuse(false)">この画像を個別に編集する</button>
       </div>
     ` : renderCardTemplate('card-' + activeIndex, activeCard)}
   `;
@@ -2312,6 +2305,72 @@ function applyInstructionToUnenteredImages() {
   unenteredCards.forEach(card => {
     card.sameAsCardKey = sourceKey;
   });
+  saveDraft();
+  renderInstructionGroups();
+}
+
+function closeInstructionTargetPicker() {
+  const modal = document.getElementById('instruction-target-picker-modal');
+  if (!modal) return;
+  document.body.style.overflow = modal.dataset.previousBodyOverflow || '';
+  modal.remove();
+}
+
+function openInstructionTargetPicker() {
+  const sourceCard = state.imgCards[state.activeInstructionGroup];
+  if (!sourceCard || sourceCard.sameAsCardKey || !hasRequiredInstruction(sourceCard)) {
+    window.alert('この画像の必須項目を入力してから適用してください。');
+    return;
+  }
+  const candidates = state.imgCards.filter(card => card !== sourceCard);
+  if (!candidates.length) {
+    window.alert('適用できる他の制作画像はありません。');
+    return;
+  }
+  closeInstructionTargetPicker();
+  const modal = document.createElement('div');
+  modal.id = 'instruction-target-picker-modal';
+  modal.className = 'instruction-target-picker-modal';
+  modal.dataset.previousBodyOverflow = document.body.style.overflow;
+  modal.innerHTML = `
+    <div class="instruction-target-picker-backdrop" onclick="closeInstructionTargetPicker()"></div>
+    <div class="instruction-target-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="instruction-target-picker-title">
+      <div class="instruction-target-picker-heading">
+        <div><h2 id="instruction-target-picker-title">同じ指示にする画像を選択</h2><p>選択した画像に、現在のデザイン指示・掲載文言などを適用します。</p></div>
+        <button type="button" class="instruction-target-picker-close" aria-label="閉じる" onclick="closeInstructionTargetPicker()">×</button>
+      </div>
+      <div class="instruction-target-picker-list">
+        ${candidates.map(card => {
+          const key = getInstructionCardKey(card);
+          const entered = cardHasAnyInput(card);
+          return `<label class="instruction-target-picker-item"><input type="checkbox" value="${escAttr(key)}"><span><strong>${escHtml(getInstructionCardLabel(card))}</strong><small>${entered ? '入力済み（適用すると上書きされます）' : '未入力'}</small></span></label>`;
+        }).join('')}
+      </div>
+      <div class="instruction-target-picker-actions">
+        <button type="button" class="btn" onclick="closeInstructionTargetPicker()">キャンセル</button>
+        <button type="button" class="btn pri" onclick="applyInstructionToSelectedImages()">選択した画像に適用</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => modal.querySelector('input[type="checkbox"]')?.focus());
+}
+
+function applyInstructionToSelectedImages() {
+  const modal = document.getElementById('instruction-target-picker-modal');
+  const sourceCard = state.imgCards[state.activeInstructionGroup];
+  if (!modal || !sourceCard) return;
+  const selectedKeys = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
+  const selectedCards = selectedKeys.map(findInstructionCardByKey).filter(Boolean).filter(card => card !== sourceCard);
+  if (!selectedCards.length) {
+    window.alert('同じ指示にする画像を選択してください。');
+    return;
+  }
+  const enteredCount = selectedCards.filter(cardHasAnyInput).length;
+  if (enteredCount && !window.confirm(`選択した${selectedCards.length}枚のうち、${enteredCount}枚には入力済みの内容があります。\n現在の指示で上書きしてもよろしいですか？`)) return;
+  const sourceKey = getInstructionCardKey(sourceCard);
+  selectedCards.forEach(card => { card.sameAsCardKey = sourceKey; });
+  closeInstructionTargetPicker();
   saveDraft();
   renderInstructionGroups();
 }
@@ -2969,11 +3028,15 @@ function getBlankDesignInstructionCards() {
 }
 
 function getFirstBlankDesignInstructionTarget() {
-  const cardIndex = state.imgCards.findIndex(card => {
+  const matchedCard = state.imgCards.find(card => {
     const effectiveCard = resolveInstructionCard(card) || card;
     return effectiveCard.design !== 'おまかせ' && !hasDesignInstructionContent(effectiveCard.designTxt);
   });
-  if (cardIndex >= 0) return { cardIndex, prefix: `card-${cardIndex}` };
+  if (matchedCard) {
+    const effectiveCard = resolveInstructionCard(matchedCard) || matchedCard;
+    const cardIndex = Math.max(state.imgCards.indexOf(effectiveCard), 0);
+    return { cardIndex, prefix: `card-${cardIndex}` };
+  }
   if (state.common && state.common.design !== 'おまかせ' && !hasDesignInstructionContent(state.common.designTxt)) {
     return { cardIndex: -1, prefix: 'common' };
   }
@@ -3006,12 +3069,12 @@ function resolveBlankDesignModal(accept) {
     }
     goTo(4);
     requestAnimationFrame(() => {
-      const field = document.getElementById(`f-designtxt-${returnTarget?.prefix || 'common'}`);
-      const textarea = field?.querySelector('textarea[aria-label="デザイン指示"]') ||
-        document.querySelector('textarea[aria-label="デザイン指示"]');
-      if (!textarea) return;
-      textarea.focus({ preventScroll: true });
-      textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const prefix = returnTarget?.prefix || 'common';
+      const personField = document.getElementById(`f-person-${prefix}`) ||
+        document.querySelector('[id^="f-person-"]');
+      if (!personField) return;
+      personField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => personField.focus({ preventScroll: true }), 250);
     });
   }
 }

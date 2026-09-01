@@ -3168,6 +3168,26 @@ textarea {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 7px;
 }
+.instruction-progress-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+.instruction-progress-summary span {
+  color: #33332f;
+  font-size: 12px;
+  font-weight: 700;
+}
+.instruction-progress-summary strong {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #eeeef4;
+  color: #555561;
+  font-size: 10px;
+}
 .instruction-target-sticky {
   position: sticky;
   top: calc(var(--header-h) + 6px);
@@ -3417,6 +3437,19 @@ textarea {
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+}
+.instruction-target-progress {
+  grid-column: 1;
+  grid-row: 4;
+  justify-self: start;
+  color: #9a6a24;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.instruction-target-progress.is-complete {
+  color: #35704d;
 }
 .instruction-copy-tabs {
   display: flex;
@@ -3677,6 +3710,26 @@ textarea {
 .instruction-copy-menu {
   position: relative;
 }
+.instruction-copy-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+.instruction-copy-action-text {
+  display: grid;
+  gap: 3px;
+  max-width: 360px;
+}
+.instruction-copy-action-text strong {
+  color: #33332f;
+  font-size: 12px;
+}
+.instruction-copy-action-text small {
+  color: #777771;
+  font-size: 10px;
+  line-height: 1.5;
+}
 .instruction-copy-chevron {
   margin-left: 2px;
   font-size: 14px;
@@ -3724,6 +3777,7 @@ textarea {
   color: #777771;
   font-size: 10px;
 }
+.instruction-target-picker-modal{position:fixed;inset:0;z-index:1300;display:grid;place-items:center;padding:20px}.instruction-target-picker-backdrop{position:absolute;inset:0;background:rgba(19,22,34,.42);backdrop-filter:blur(2px)}.instruction-target-picker-dialog{position:relative;display:grid;gap:16px;width:min(620px,100%);max-height:min(720px,calc(100vh - 40px));padding:22px;border:1px solid #d8d9e2;border-radius:16px;background:#fff;box-shadow:0 20px 60px rgba(26,28,40,.22)}.instruction-target-picker-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.instruction-target-picker-heading h2{margin:0 0 5px;font-size:18px}.instruction-target-picker-heading p{margin:0;color:#6e6e68;font-size:12px}.instruction-target-picker-close{width:32px;height:32px;border:0;border-radius:50%;background:#f2f2ef;color:#55554f;font-size:20px;line-height:1;cursor:pointer}.instruction-target-picker-list{display:grid;gap:7px;overflow-y:auto;padding:2px}.instruction-target-picker-item{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:start;gap:10px;padding:11px 12px;border:1px solid #deded8;border-radius:9px;cursor:pointer}.instruction-target-picker-item:hover{border-color:#9da8e9;background:#f7f8ff}.instruction-target-picker-item input{margin:2px 0 0}.instruction-target-picker-item span{display:grid;gap:3px;min-width:0}.instruction-target-picker-item strong{overflow-wrap:anywhere;font-size:12px}.instruction-target-picker-item small{color:#85857f;font-size:10px}.instruction-target-picker-actions{display:flex;justify-content:flex-end;gap:9px}@media(max-width:640px){.instruction-target-picker-modal{padding:12px}.instruction-target-picker-dialog{max-height:calc(100vh - 24px);padding:17px;border-radius:13px}.instruction-target-picker-actions .btn{flex:1}}
 .copy-action-icon {
   position: relative;
   display: inline-block;
@@ -3914,6 +3968,24 @@ textarea {
   margin: 5px 0 0;
   color: #666661;
   font-size: 11px;
+}
+.instruction-reuse-summary-action {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 11px;
+  padding: 7px 11px;
+  border: 1px solid #bfc3d8;
+  border-radius: 7px;
+  background: #fff;
+  color: #3f4fae;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.instruction-reuse-summary-action:hover {
+  border-color: #4864c8;
+  background: #f2f4ff;
 }
 .instruction-reuse-summary.is-invalid {
   display: block;
@@ -4110,6 +4182,14 @@ textarea {
   }
   .instruction-copy-menu {
     width: 100%;
+  }
+  .instruction-copy-action {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .instruction-copy-action-text {
+    max-width: none;
   }
   .instruction-copy-options {
     right: 0;
